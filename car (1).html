@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Car remote control</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #F6F6F6;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  }
+
+  .card {
+    width: 328px;
+    height: 223px;
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid #EDEDED;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 2px;
+    overflow: hidden;
+    transition: height 0.2s ease-in-out;
+  }
+
+  .card.collapsed { height: 51px; }
+
+  .header {
+    height: 47px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px 0 14px;
+    flex-shrink: 0;
+  }
+
+  .header h1 {
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+  }
+
+  .toggle {
+    width: 35px;
+    height: 19px;
+    background: #34C759;
+    border-radius: 999px;
+    position: relative;
+    cursor: pointer;
+    border: none;
+    outline: none;
+    flex-shrink: 0;
+    box-shadow: 0px 1px 1px rgba(0,0,0,0.25), inset 0px 1px 1px rgba(0,0,0,0.25);
+    transition: background 0.2s;
+  }
+  .toggle.off { background: #D8D8D8; }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    background: #fff;
+    border-radius: 50%;
+    top: 1px;
+    left: 1px;
+    box-shadow: 0px 4px 4px rgba(0,0,0,0.25);
+    transform: translateX(16px);
+    transition: transform 0.2s ease;
+  }
+  .toggle.off::after { transform: translateX(0px); }
+
+  .buttons-container {
+    display: flex;
+    gap: 2px;
+    padding: 0;
+    overflow: visible;
+    flex-shrink: 0;
+  }
+
+  .btn-stack {
+    position: relative;
+    width: 160px;
+    height: 168px;
+    flex-shrink: 0;
+    overflow: visible;
+  }
+
+  .alarm-stack {
+    filter: drop-shadow(8px 10px 7px rgba(0,0,0,0.07));
+    transition: filter 0.25s ease;
+  }
+  .alarm-stack.pressed { filter: none; }
+
+  .engine-stack {
+    filter: drop-shadow(8px 10px 7px rgba(0,0,0,0.07));
+    transition: filter 0.25s ease;
+  }
+  .engine-stack.pressed { filter: none; }
+
+  .btn-shadow {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 160px;
+    height: 160px;
+    border-radius: 16px;
+  }
+  .alarm-shadow  { background: #DCDCDC; }
+  .engine-shadow { background: #1B1B1B; }
+
+  .btn-wrap {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 160px;
+    height: 160px;
+    border-radius: 16px;
+    overflow: hidden;
+    will-change: top;
+  }
+
+  .app-btn {
+    width: 160px;
+    height: 160px;
+    border: none;
+    border-radius: 0;
+    cursor: pointer;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: none;
+    user-select: none;
+  }
+  .app-btn:active, .app-btn:focus, .app-btn:focus-visible {
+    outline: none; box-shadow: none;
+  }
+
+  /* Alarm button */
+  .btn-alarm { background: #f5f5f5; }
+  .btn-alarm .btn-label { font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; color: #FF0000; }
+
+  /* Engine button */
+  .btn-engine { background: linear-gradient(to bottom, #1F1F1F, #2D2D2D); }
+  .btn-engine .btn-label { font-size: 14px; font-weight: 500; font-family: 'Inter', sans-serif; color: #fff; }
+
+  .engine-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+
+  /* Speedometer */
+  .speedo-wrap {
+    position: relative;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Dot */
+  .dot-wrap {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .dot-glow {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #FF0000 0%, rgba(255,0,0,0.4) 35%, rgba(255,0,0,0) 100%);
+    filter: blur(8px);
+    opacity: 0;
+    transform: translateY(2px);
+    transition: none;
+    z-index: 0;
+  }
+  .dot {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    z-index: 1;
+  }
+  .dot-active {
+    background:
+      radial-gradient(circle at 36% 30%, rgba(255,255,255,0.9) 0%, rgba(255,200,200,0.4) 30%, rgba(255,255,255,0) 55%),
+      radial-gradient(circle at 50% 50%, #FF4040 0%, #FF0000 40%, #CC0000 100%);
+    box-shadow: 0 0 6px 2px rgba(255,0,0,0.5), inset 0 -3px 5px rgba(120,0,0,0.5), inset 0 2px 3px rgba(255,180,180,0.3);
+  }
+  .dot-inactive {
+    background:
+      radial-gradient(circle at 38% 32%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 50%),
+      radial-gradient(circle at 50% 45%, #888 0%, #555 100%);
+    box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 2px 3px rgba(255,255,255,0.15);
+  }
+</style>
+</head>
+<body>
+<div class="card" id="card">
+
+  <div class="header">
+    <h1>Car remote control</h1>
+    <button class="toggle" id="mainToggle" onclick="toggleMain()"></button>
+  </div>
+
+  <div class="buttons-container">
+
+    <!-- Alarm -->
+    <div class="btn-stack alarm-stack" id="alarmStack">
+      <div class="btn-shadow alarm-shadow"></div>
+      <div class="btn-wrap" id="alarmWrap">
+        <button class="app-btn btn-alarm" id="alarmBtn" onclick="toggleBtn('alarm')">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 16.0002C20.0813 16.0002 19.3333 15.2522 19.3333 14.3335V8.66683C19.3333 4.62283 16.044 1.3335 12 1.3335C7.956 1.3335 4.66667 4.62283 4.66667 8.66683V14.3335C4.66667 15.2522 3.91867 16.0002 3 16.0002C2.448 16.0002 2 16.4482 2 17.0002C2 17.5522 2.448 18.0002 3 18.0002H21C21.552 18.0002 22 17.5522 22 17.0002C22 16.4482 21.552 16.0002 21 16.0002Z" fill="#FF0000"/>
+            <path d="M10.4012 20C10.1998 20 10.0105 20.0907 9.88382 20.2467C9.75716 20.4027 9.70782 20.608 9.74916 20.804C9.97982 21.9 10.9065 22.6667 12.0012 22.6667C13.0958 22.6667 14.0225 21.9 14.2532 20.804C14.2945 20.608 14.2452 20.4027 14.1185 20.2467C13.9918 20.0907 13.8025 20 13.6012 20H10.4012Z" fill="#FF0000"/>
+          </svg>
+          <span class="btn-label">Alarm</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Engine -->
+    <div class="btn-stack engine-stack" id="engineStack">
+      <div class="btn-shadow engine-shadow"></div>
+      <div class="btn-wrap" id="engineWrap">
+        <button class="app-btn btn-engine active" id="engineBtn" onclick="toggleBtn('engine')">
+          <div class="engine-top">
+            <div class="speedo-wrap" id="speedoWrap">
+              <svg class="speedo-glow" width="24" height="24" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;filter:blur(3px);opacity:0.8;">
+                <path d="M14.6729 4.3667C14.6662 4.3594 14.6641 4.3499 14.6571 4.3428C14.6501 4.3357 14.6405 4.3338 14.6333 4.3269C13.1863 2.8899 11.1954 2 8.99992 2C8.03212 2 7.08683 2.1709 6.18843 2.5083C5.80073 2.6538 5.60442 3.08639 5.74992 3.47409C5.89642 3.86179 6.32802 4.0576 6.71572 3.9126C7.20952 3.7271 7.72602 3.62701 8.24992 3.56671V4.75C8.24992 5.1641 8.58582 5.5 8.99992 5.5C9.41402 5.5 9.74992 5.1641 9.74992 4.75V3.54691C10.9806 3.68921 12.1059 4.1765 13.0297 4.9097L12.1815 5.75781C11.8885 6.05081 11.8885 6.5254 12.1815 6.8183C12.328 6.9648 12.5194 7.03799 12.7118 7.03799C12.9042 7.03799 13.0956 6.9648 13.2421 6.8183L14.0903 5.97021C14.8233 6.89401 15.3108 8.0193 15.453 9.25H14.2499C13.8358 9.25 13.4999 9.5859 13.4999 10C13.4999 10.4141 13.8358 10.75 14.2499 10.75H15.4375C15.2995 11.9543 14.8511 13.0881 14.0966 14.0361L13.2431 13.1826C12.9501 12.8896 12.4755 12.8896 12.1826 13.1826C11.8897 13.4756 11.8896 13.9502 12.1826 14.2431L13.5967 15.6572C13.7432 15.8037 13.9346 15.8769 14.127 15.8769C14.3184 15.8769 14.5108 15.8037 14.6573 15.6572C16.168 14.1469 17.0001 12.1382 17.0001 10C17.0001 7.8044 16.1099 5.8135 14.6729 4.3667Z" fill="#FAAB1C"/>
+                <path d="M4.7578 13.1816L3.9043 14.0351C3.1501 13.0871 2.7011 11.9536 2.5627 10.7499H3.75C4.1641 10.7499 4.5 10.414 4.5 9.99992C4.5 9.58582 4.1641 9.24992 3.75 9.24992H2.5667C2.627 8.72652 2.72669 8.21012 2.91209 7.71522C3.05759 7.32702 2.8613 6.89492 2.4726 6.74992C2.0908 6.60342 1.6523 6.80072 1.5078 7.18892C1.1709 8.08832 1 9.03361 1 9.99901C1 9.99881 1 9.99921 1 9.99901V10.0001C1.0004 12.1371 1.8323 14.1456 3.3438 15.6561C3.4903 15.8026 3.6817 15.8758 3.8741 15.8758C4.0665 15.8758 4.2579 15.8026 4.4044 15.6561L5.8185 14.242C6.1115 13.949 6.1115 13.4744 5.8185 13.1815C5.5255 12.8886 5.0507 12.8886 4.7578 13.1816Z" fill="#FAAB1C"/>
+                <path d="M8.99996 7.99999C8.72316 7.99999 8.45945 8.0569 8.21945 8.1589L4.40326 4.34271C4.11026 4.04971 3.63566 4.04971 3.34276 4.34271C3.04986 4.63571 3.04976 5.11029 3.34276 5.40319L7.15895 9.21938C7.05685 9.45938 7.00006 9.7231 7.00006 9.9999C7.00006 11.1029 7.89756 11.9999 9.00006 11.9999C10.1026 11.9999 11.0001 11.1029 11.0001 9.9999C11.0001 8.8969 10.1025 7.99999 8.99996 7.99999Z" fill="#FF0000"/>
+              </svg>
+              <svg id="speedoIcon" class="speedo-active" width="24" height="24" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" style="position:relative;z-index:1;">
+                <path d="M14.6729 4.3667C14.6662 4.3594 14.6641 4.3499 14.6571 4.3428C14.6501 4.3357 14.6405 4.3338 14.6333 4.3269C13.1863 2.8899 11.1954 2 8.99992 2C8.03212 2 7.08683 2.1709 6.18843 2.5083C5.80073 2.6538 5.60442 3.08639 5.74992 3.47409C5.89642 3.86179 6.32802 4.0576 6.71572 3.9126C7.20952 3.7271 7.72602 3.62701 8.24992 3.56671V4.75C8.24992 5.1641 8.58582 5.5 8.99992 5.5C9.41402 5.5 9.74992 5.1641 9.74992 4.75V3.54691C10.9806 3.68921 12.1059 4.1765 13.0297 4.9097L12.1815 5.75781C11.8885 6.05081 11.8885 6.5254 12.1815 6.8183C12.328 6.9648 12.5194 7.03799 12.7118 7.03799C12.9042 7.03799 13.0956 6.9648 13.2421 6.8183L14.0903 5.97021C14.8233 6.89401 15.3108 8.0193 15.453 9.25H14.2499C13.8358 9.25 13.4999 9.5859 13.4999 10C13.4999 10.4141 13.8358 10.75 14.2499 10.75H15.4375C15.2995 11.9543 14.8511 13.0881 14.0966 14.0361L13.2431 13.1826C12.9501 12.8896 12.4755 12.8896 12.1826 13.1826C11.8897 13.4756 11.8896 13.9502 12.1826 14.2431L13.5967 15.6572C13.7432 15.8037 13.9346 15.8769 14.127 15.8769C14.3184 15.8769 14.5108 15.8037 14.6573 15.6572C16.168 14.1469 17.0001 12.1382 17.0001 10C17.0001 7.8044 16.1099 5.8135 14.6729 4.3667Z" fill="#FAAB1C"/>
+                <path d="M4.7578 13.1816L3.9043 14.0351C3.1501 13.0871 2.7011 11.9536 2.5627 10.7499H3.75C4.1641 10.7499 4.5 10.414 4.5 9.99992C4.5 9.58582 4.1641 9.24992 3.75 9.24992H2.5667C2.627 8.72652 2.72669 8.21012 2.91209 7.71522C3.05759 7.32702 2.8613 6.89492 2.4726 6.74992C2.0908 6.60342 1.6523 6.80072 1.5078 7.18892C1.1709 8.08832 1 9.03361 1 9.99901C1 9.99881 1 9.99921 1 9.99901V10.0001C1.0004 12.1371 1.8323 14.1456 3.3438 15.6561C3.4903 15.8026 3.6817 15.8758 3.8741 15.8758C4.0665 15.8758 4.2579 15.8026 4.4044 15.6561L5.8185 14.242C6.1115 13.949 6.1115 13.4744 5.8185 13.1815C5.5255 12.8886 5.0507 12.8886 4.7578 13.1816Z" fill="#FAAB1C"/>
+                <path d="M8.99996 7.99999C8.72316 7.99999 8.45945 8.0569 8.21945 8.1589L4.40326 4.34271C4.11026 4.04971 3.63566 4.04971 3.34276 4.34271C3.04986 4.63571 3.04976 5.11029 3.34276 5.40319L7.15895 9.21938C7.05685 9.45938 7.00006 9.7231 7.00006 9.9999C7.00006 11.1029 7.89756 11.9999 9.00006 11.9999C10.1026 11.9999 11.0001 11.1029 11.0001 9.9999C11.0001 8.8969 10.1025 7.99999 8.99996 7.99999Z" fill="#FF0000"/>
+              </svg>
+            </div>
+            <div class="dot-wrap">
+              <div class="dot-glow" id="engineGlow"></div>
+              <div class="dot dot-active" id="engineDot"></div>
+            </div>
+          </div>
+          <span class="btn-label">Engine</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function createSpring({ stiffness = 400, damping = 28, mass = 0.6 } = {}) {
+    return {
+      stiffness, damping, mass,
+      position: 0, velocity: 0, target: 0,
+      rafId: null, listeners: [],
+      setTarget(t) { this.target = t; this._start(); },
+      _start() {
+        if (this.rafId) return;
+        const self = this; let last = null;
+        function step(ts) {
+          if (last === null) last = ts;
+          const dt = Math.min((ts - last) / 1000, 0.064); last = ts;
+          const force = -self.stiffness * (self.position - self.target);
+          const dampen = -self.damping * self.velocity;
+          self.velocity += ((force + dampen) / self.mass) * dt;
+          self.position += self.velocity * dt;
+          self.listeners.forEach(fn => fn(self.position));
+          const atRest = Math.abs(self.velocity) < 0.01 && Math.abs(self.position - self.target) < 0.01;
+          if (atRest) {
+            self.position = self.target; self.velocity = 0;
+            self.listeners.forEach(fn => fn(self.position));
+            self.rafId = null;
+          } else { self.rafId = requestAnimationFrame(step); }
+        }
+        self.rafId = requestAnimationFrame(step);
+      },
+      onChange(fn) { this.listeners.push(fn); }
+    };
+  }
+
+  const buttons = {
+    alarm:  { active: false, spring: createSpring(), wrap: document.getElementById('alarmWrap'),  btn: document.getElementById('alarmBtn') },
+    engine: { active: true,  spring: createSpring(), wrap: document.getElementById('engineWrap'), btn: document.getElementById('engineBtn') }
+  };
+
+  Object.entries(buttons).forEach(([name, b]) => {
+    const startY = b.active ? 8 : 0;
+    b.spring.position = startY; b.spring.target = startY;
+    b.wrap.style.top = startY + 'px';
+    b.spring.onChange(y => { b.wrap.style.top = y + 'px'; });
+  });
+
+  // Init engine glow
+  document.getElementById('engineGlow').style.opacity = '0.7';
+
+  function updateEngineIndicators(active) {
+    const dot  = document.getElementById('engineDot');
+    const glow = document.getElementById('engineGlow');
+    const speedoWrap = document.getElementById('speedoWrap');
+    const speedoGlow = document.querySelector('.speedo-glow');
+
+    dot.className = active ? 'dot dot-active' : 'dot dot-inactive';
+    glow.style.opacity = active ? '0.7' : '0';
+    if (speedoWrap) speedoWrap.style.filter = active ? 'none' : 'grayscale(0.7) brightness(0.45)';
+    if (speedoGlow) speedoGlow.style.opacity = active ? '0.8' : '0';
+  }
+
+  function toggleBtn(name) {
+    const b = buttons[name];
+
+    if (name === 'alarm') {
+      playClick();
+      playAlarm();
+      const stack = document.getElementById('alarmStack');
+      stack.classList.add('pressed');
+      b.spring.setTarget(8);
+      setTimeout(() => {
+        b.spring.setTarget(0);
+        stack.classList.remove('pressed');
+      }, 60);
+      return;
+    }
+
+    b.active = !b.active;
+    b.btn.classList.toggle('active',   b.active);
+    b.btn.classList.toggle('inactive', !b.active);
+    b.spring.setTarget(b.active ? 8 : 0);
+    if (name === 'engine') {
+      playClick();
+      playEngine(b.active);
+      updateEngineIndicators(b.active);
+      const stack = document.getElementById('engineStack');
+      b.active ? stack.classList.add('pressed') : stack.classList.remove('pressed');
+    }
+  }
+
+  let mainOn = true;
+  const card = document.getElementById('card');
+
+  function toggleMain() {
+    mainOn = !mainOn;
+    document.getElementById('mainToggle').classList.toggle('off', !mainOn);
+
+    if (!mainOn) {
+      // Ugasi engine
+      buttons.engine.active = false;
+      buttons.engine.btn.classList.remove('active');
+      buttons.engine.btn.classList.add('inactive');
+      buttons.engine.spring.setTarget(0);
+      updateEngineIndicators(false);
+      document.getElementById('engineStack').classList.remove('pressed');
+      card.classList.add('collapsed');
+    } else {
+      card.classList.remove('collapsed');
+    }
+  }
+
+  // Audio context
+  let audioCtx = null;
+  function getCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  // Click sound - hard mechanical click
+  function playClick() {
+    const ctx = getCtx();
+    const buf = ctx.createBuffer(1, ctx.sampleRate * 0.04, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 8);
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.35, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 800;
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+  }
+
+  // BMW M2 alarm beep - two quick horn chirps
+  function playAlarm() {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+
+    function chirp(startTime) {
+      // BMW horn is a blend of ~480Hz fundamental + harmonics, punchy
+      const freqs   = [480, 960, 1440, 2400];
+      const weights = [0.7, 0.45, 0.25, 0.12];
+
+      freqs.forEach((f, idx) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f * 1.04, startTime);         // slight detune attack
+        osc.frequency.linearRampToValueAtTime(f, startTime + 0.02); // settle
+
+        // Slight overdrive per partial
+        const dist = ctx.createWaveShaper();
+        const n = 256;
+        const curve = new Float32Array(n);
+        for (let i = 0; i < n; i++) {
+          const x = (i * 2) / n - 1;
+          const k = idx === 0 ? 60 : 20;
+          curve[i] = (Math.PI + k) * x / (Math.PI + k * Math.abs(x));
+        }
+        dist.curve = curve;
+
+        const gain = ctx.createGain();
+        // Fast attack, slight decay, fast release — punchy horn
+        gain.gain.setValueAtTime(0, startTime);
+        gain.gain.linearRampToValueAtTime(weights[idx], startTime + 0.008);
+        gain.gain.setValueAtTime(weights[idx] * 0.85, startTime + 0.08);
+        gain.gain.linearRampToValueAtTime(0, startTime + 0.12);
+
+        osc.connect(dist);
+        dist.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startTime);
+        osc.stop(startTime + 0.13);
+      });
+
+      // Body thump — low punch underneath
+      const thump = ctx.createOscillator();
+      thump.type = 'sine';
+      thump.frequency.setValueAtTime(90, startTime);
+      thump.frequency.exponentialRampToValueAtTime(40, startTime + 0.1);
+      const tg = ctx.createGain();
+      tg.gain.setValueAtTime(0.18, startTime);
+      tg.gain.exponentialRampToValueAtTime(0.001, startTime + 0.1);
+      thump.connect(tg); tg.connect(ctx.destination);
+      thump.start(startTime); thump.stop(startTime + 0.12);
+    }
+
+    chirp(now);
+    chirp(now + 0.35);
+  }
+
+  // Engine loop node refs
+  let engineLoopSrc = null;
+  let engineLoopGain = null;
+  let engineLoopLp = null;
+
+  function playEngine(active) {
+    const ctx = getCtx();
+    const now = ctx.currentTime;
+
+    if (active) {
+      const SR = ctx.sampleRate;
+
+      // Helper: make one combustion synthesis sample buffer at given RPM
+      function makeEngineBuffer(durationSec, rpmFn) {
+        const len = Math.floor(SR * durationSec);
+        const buf = ctx.createBuffer(1, len, SR);
+        const d = buf.getChannelData(0);
+        // S58 inline-6: 6 cylinders, 4-stroke = 3 firing events per rev
+        const cylinders = 6;
+        const firingPerRev = cylinders / 2;
+        let phase1 = 0, phase2 = 0, phase3 = 0;
+        for (let i = 0; i < len; i++) {
+          const t = i / SR;
+          const rpm = rpmFn(t);
+          const rps = rpm / 60;
+          const f1 = rps * firingPerRev;       // fundamental firing freq
+          const f2 = f1 * 2;
+          const f3 = f1 * 3;
+          const f05 = f1 * 0.5;
+          // advance phases
+          phase1 = (phase1 + f1 / SR) % 1;
+          phase2 = (phase2 + f2 / SR) % 1;
+          phase3 = (phase3 + f3 / SR) % 1;
+          // sawtooth-based combustion pulses (sharper than sine)
+          const pulse = Math.sin(2 * Math.PI * phase1) * 0.5
+                      + Math.sin(2 * Math.PI * phase2) * 0.28
+                      + Math.sin(2 * Math.PI * phase3) * 0.14
+                      + Math.sin(2 * Math.PI * phase1 * 0.5) * 0.22;
+          // Exhaust noise component
+          const noise = (Math.random() * 2 - 1) * 0.06;
+          d[i] = (pulse + noise) * 0.55;
+        }
+        return buf;
+      }
+
+      // 1) Starter crank: 0.4s
+      const crankBuf = ctx.createBuffer(1, Math.floor(SR * 0.4), SR);
+      const cd = crankBuf.getChannelData(0);
+      for (let i = 0; i < cd.length; i++) {
+        const t = i / SR;
+        cd[i] = (Math.random() * 2 - 1)
+               * Math.abs(Math.sin(2 * Math.PI * 22 * t))
+               * (1 - t / 0.4) * 0.7;
+      }
+      const crankSrc = ctx.createBufferSource();
+      crankSrc.buffer = crankBuf;
+      const crankBp = ctx.createBiquadFilter();
+      crankBp.type = 'bandpass'; crankBp.frequency.value = 200; crankBp.Q.value = 1;
+      const crankGain = ctx.createGain();
+      crankGain.gain.setValueAtTime(0.8, now);
+      crankGain.gain.linearRampToValueAtTime(0, now + 0.4);
+      crankSrc.connect(crankBp); crankBp.connect(crankGain); crankGain.connect(ctx.destination);
+      crankSrc.start(now);
+
+      // 2) Cold start + rev to 3500 + settle to 1800 (~2.8s)
+      const startBuf = makeEngineBuffer(2.8, (t) => {
+        if (t < 0.05) return 800;
+        if (t < 0.4)  return 800 + (t - 0.05) / 0.35 * 1300;  // ramp to 2100
+        if (t < 1.2)  return 2100 - (t - 0.4) / 0.8 * 700;    // settle to 1400
+        return 1400 + Math.sin(t * 3.1) * 30;                   // slight idle waver
+      });
+      const startSrc = ctx.createBufferSource();
+      startSrc.buffer = startBuf;
+      const startLp = ctx.createBiquadFilter();
+      startLp.type = 'lowpass'; startLp.frequency.value = 900;
+      const startGain = ctx.createGain();
+      startGain.gain.setValueAtTime(0, now + 0.25);
+      startGain.gain.linearRampToValueAtTime(1.0, now + 0.45);
+      startGain.gain.setValueAtTime(1.0, now + 2.5);
+      startGain.gain.linearRampToValueAtTime(0, now + 2.8);
+      startSrc.connect(startLp); startLp.connect(startGain); startGain.connect(ctx.destination);
+      startSrc.start(now + 0.25);
+
+      // 3) Looping idle at 1800rpm
+      // One combustion cycle at 1800rpm: 1800/60 * 3 firings/rev = 90 firings/sec → cycle = 1/90 ≈ 11ms
+      const cycleDur = 1 / (1400 / 60 * 3);
+      const idleBuf = makeEngineBuffer(cycleDur * 4, () => 1400);
+      // Make loop seamless: fade edges slightly
+      const id = idleBuf.getChannelData(0);
+      const fadeLen = Math.floor(id.length * 0.05);
+      for (let i = 0; i < fadeLen; i++) {
+        id[i] *= i / fadeLen;
+        id[id.length - 1 - i] *= i / fadeLen;
+      }
+
+      const idleSrc = ctx.createBufferSource();
+      idleSrc.buffer = idleBuf;
+      idleSrc.loop = true;
+
+      const idleLp = ctx.createBiquadFilter();
+      idleLp.type = 'lowpass'; idleLp.frequency.value = 900;
+
+      const idleGain = ctx.createGain();
+      idleGain.gain.setValueAtTime(0, now + 2.5);
+      idleGain.gain.linearRampToValueAtTime(0.9, now + 2.9);
+
+      idleSrc.connect(idleLp); idleLp.connect(idleGain); idleGain.connect(ctx.destination);
+      idleSrc.start(now + 2.5);
+
+      engineLoopSrc  = idleSrc;
+      engineLoopGain = idleGain;
+
+    } else {
+      // --- Stop idle loop with fade + wind down ---
+      if (engineLoopSrc) {
+        const ctx2 = getCtx();
+        const now2 = ctx2.currentTime;
+        engineLoopGain.gain.setValueAtTime(engineLoopGain.gain.value, now2);
+        engineLoopGain.gain.linearRampToValueAtTime(0, now2 + 0.3);
+        const srcToStop = engineLoopSrc;
+        setTimeout(() => { try { srcToStop.stop(); } catch(e){} }, 350);
+        engineLoopSrc  = null;
+        engineLoopGain = null;
+      }
+
+      // Wind down thud
+      const ctx3 = getCtx();
+      const now3 = ctx3.currentTime;
+      const len = ctx3.sampleRate * 0.7;
+      const buf = ctx3.createBuffer(1, len, ctx3.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) {
+        const t = i / ctx3.sampleRate;
+        const freq = 28 * Math.pow(0.04, t / 0.7);
+        d[i] = (Math.sin(2 * Math.PI * freq * t) * 0.55 + (Math.random() * 2 - 1) * 0.12) * (1 - t / 0.7);
+      }
+      const src = ctx3.createBufferSource();
+      src.buffer = buf;
+      const lp = ctx3.createBiquadFilter();
+      lp.type = 'lowpass';
+      lp.frequency.value = 320;
+      const gain = ctx3.createGain();
+      gain.gain.value = 0.7;
+      src.connect(lp); lp.connect(gain); gain.connect(ctx3.destination);
+      src.start(now3);
+    }
+  }
+
+</script>
+</body>
+</html>
