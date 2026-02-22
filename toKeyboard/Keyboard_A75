@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>KB-75 — Walkman Edition</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #b8c4cc;
+    background-image: radial-gradient(ellipse at 30% 40%, #cdd6dc 0%, #a8b8c2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .shell {
+    position: relative;
+    background: rgba(210,225,230,0.18);
+    border: 1.5px solid rgba(255,255,255,0.55);
+    border-radius: 3px;
+    padding: 10px;
+    box-shadow:
+      0 0 0 0.5px rgba(180,200,210,0.4),
+      inset 0 1px 0 rgba(255,255,255,0.6),
+      inset 0 -1px 0 rgba(150,170,180,0.3),
+      0 40px 60px rgba(60,80,90,0.35),
+      0 8px 20px rgba(0,0,0,0.2);
+    backdrop-filter: blur(2px);
+  }
+  .shell::before {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 2px;
+    border: 1px solid rgba(255,255,255,0.25);
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .inner-body {
+    background: linear-gradient(160deg, #d8dde0 0%, #c8cfd4 40%, #bfc8cc 100%);
+    border-radius: 2px;
+    padding: 14px 14px 0;
+    position: relative;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.7),
+      inset 0 -2px 4px rgba(100,120,130,0.3),
+      0 2px 8px rgba(80,100,110,0.2);
+  }
+
+  .screw {
+    position: absolute;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #b0b8bc, #6a7880);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.3);
+    z-index: 10;
+  }
+  .screw::after {
+    content: '';
+    position: absolute;
+    top:50%; left:50%;
+    transform: translate(-50%,-50%) rotate(-30deg);
+    width: 5px; height: 0.8px;
+    background: rgba(0,0,0,0.4);
+    box-shadow: 0 1.5px 0 rgba(0,0,0,0.35);
+  }
+  .s1 { top:6px; left:6px; }
+  .s2 { top:6px; right:6px; }
+
+  /* ── KEYBOARD PLATE ── */
+  .keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-radius: 2px;
+    padding: 5px;
+    background: linear-gradient(160deg, #a8b6be 0%, #98a8b2 100%);
+    box-shadow:
+      inset 0 3px 8px rgba(60,80,90,0.4),
+      inset 0 0 0 1px rgba(80,100,110,0.3);
+  }
+
+  .row {
+    display: flex;
+    gap: 4px;
+    align-items: stretch;
+  }
+
+  /* ── BASE KEY ── */
+  .key {
+    background: linear-gradient(175deg,
+      rgba(238,244,247,0.95) 0%,
+      rgba(210,222,228,0.90) 50%,
+      rgba(195,210,217,0.88) 100%
+    );
+    border: none;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 4px 5px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    font-weight: 400;
+    color: #3a4a52;
+    flex: 1;
+    min-width: 38px;
+    height: 42px;
+    position: relative;
+    box-shadow:
+      0 4px 0 rgba(70,90,100,0.6),
+      0 5px 10px rgba(40,60,70,0.35),
+      inset 0 1px 0 rgba(255,255,255,0.75),
+      inset 1px 0 0 rgba(255,255,255,0.3),
+      inset -1px 0 0 rgba(100,120,130,0.2);
+    border-radius: 3px 3px 2px 2px;
+    transition: none;
+    line-height: 1.2;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+    z-index: 1;
+  }
+
+  .key::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 45%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, transparent 100%);
+    pointer-events: none;
+    border-radius: 3px 3px 0 0;
+  }
+
+  .key .top-char {
+    position: absolute;
+    top: 4px; left: 5px;
+    font-size: 7px;
+    color: #7a8e96;
+    line-height: 1;
+  }
+  .key .sub-char {
+    position: absolute;
+    top: 4px; right: 5px;
+    font-size: 7px;
+    color: #7a8e96;
+    line-height: 1;
+  }
+
+  .key .main-char {
+    font-size: 10px;
+    font-weight: 400;
+    color: #2a3a42;
+  }
+
+  .key-label {
+    font-size: 8px;
+    color: #3a4a52;
+    font-weight: 300;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
+  }
+
+  /* fn row label smaller */
+  .key-fn {
+    font-size: 7.5px;
+    color: #5a6e78;
+    font-weight: 300;
+  }
+
+  /* PRESSED */
+  .key:active, .key.pressed {
+    background: linear-gradient(175deg,
+      rgba(255,90,30,0.92) 0%,
+      rgba(210,55,10,0.95) 100%
+    );
+    box-shadow:
+      0 1px 0 rgba(70,90,100,0.5),
+      0 2px 4px rgba(40,60,70,0.2),
+      inset 0 2px 4px rgba(100,20,0,0.3),
+      inset 0 1px 0 rgba(255,180,140,0.3);
+    transform: translateY(3px);
+  }
+  .key:active .main-char, .key.pressed .main-char,
+  .key:active .key-label, .key.pressed .key-label,
+  .key:active .key-fn, .key.pressed .key-fn { color: #fff; font-weight: 500; }
+  .key:active .top-char, .key.pressed .top-char,
+  .key:active .sub-char, .key.pressed .sub-char { color: rgba(255,200,180,0.85); }
+  .key:active::before, .key.pressed::before {
+    background: linear-gradient(180deg, rgba(255,180,140,0.3) 0%, transparent 100%);
+  }
+
+  /* ── SPECIFIC KEY WIDTHS (flex-based) ── */
+  /* F row — all equal flex:1, Esc slightly wider, Del wider */
+  .w-esc      { flex: 1.2; }
+  .w-del      { flex: 1.2; }
+
+  /* Number row */
+  .w-backspace { flex: 1.8; min-width: 60px; }
+
+  /* QWERTY row */
+  .w-tab       { flex: 1.4; min-width: 48px; }
+  .w-backslash { flex: 1.4; min-width: 48px; }
+
+  /* ASDF row */
+  .w-capslock  { flex: 1.7; min-width: 56px; }
+  .w-enter     { flex: 1.7; min-width: 56px; }
+
+  /* ZXCV row */
+  .w-shift-l   { flex: 2.2; min-width: 72px; }
+  .w-shift-r   { flex: 1.4; min-width: 48px; }
+  /* arrow keys on shift row */
+  .w-arrow-sm  { flex: 1; min-width: 36px; height: 42px; }
+
+  /* Bottom row */
+  .w-ctrl      { flex: 1.2; }
+  .w-win       { flex: 1.1; }
+  .w-alt       { flex: 1.1; }
+  .w-space     { flex: 5.5; min-width: 0; }
+  .w-alt-r     { flex: 1.1; }
+  .w-fn        { flex: 1.1; }
+  .w-arrow-b   { flex: 1; min-width: 36px; }
+
+  /* spacer between main keys and nav column */
+  .gap { width: 8px; flex-shrink: 0; }
+
+  /* ── BOTTOM PANEL ── */
+  .bottom-panel {
+    background: linear-gradient(135deg, #c0c9ce 0%, #b0bcc2 50%, #a8b4bc 100%);
+    margin: 0 -14px;
+    padding: 10px 14px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid rgba(140,160,170,0.6);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4);
+    position: relative;
+  }
+
+  .btn-record {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #8a3020, #4a1510);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,120,80,0.1);
+    flex-shrink: 0; cursor: default; border: none;
+    transition: background 0.05s, box-shadow 0.05s;
+  }
+  .btn-record.active {
+    background: radial-gradient(circle at 35% 30%, #ff7755, #e82200);
+    box-shadow: 0 0 12px rgba(255,60,0,0.9), 0 0 24px rgba(255,60,0,0.5),
+      0 3px 8px rgba(200,50,0,0.4), inset 0 1px 0 rgba(255,200,160,0.6);
+  }
+
+  .btn-dark {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #555f66, #2a3238);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+    flex-shrink: 0; cursor: default; border: none;
+    transition: background 0.1s, box-shadow 0.1s;
+  }
+  .btn-dark.active {
+    background: radial-gradient(circle at 35% 30%, #a0b8c8, #5a8aaa);
+    box-shadow: 0 0 10px rgba(100,180,220,0.9), 0 0 20px rgba(100,180,220,0.4),
+      0 2px 6px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.5);
+  }
+
+  .led-stripe {
+    width: 3px; height: 18px;
+    background: linear-gradient(180deg, #ff2200 0%, #cc1100 100%);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(255,50,0,0.7);
+    flex-shrink: 0;
+  }
+
+  .brand {
+    font-size: 9px; letter-spacing: 0.25em; color: #5a6a72;
+    font-weight: 400; text-transform: uppercase; flex: 1; text-align: center;
+  }
+
+  .ctrl-buttons { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .ctrl-btn {
+    width: 16px; height: 5px;
+    background: linear-gradient(90deg, #a8b4bc, #8a9aa2);
+    border-radius: 2px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .s3 { bottom:6px; left:6px; position:relative; top:auto; left:auto; }
+  .s4 { bottom:6px; right:6px; position:relative; top:auto; right:auto; }
+</style>
+</head>
+<body>
+<div class="shell">
+<div class="inner-body">
+  <div class="screw s1"></div>
+  <div class="screw s2"></div>
+
+  <div class="keyboard" id="keyboard">
+
+    <!-- ROW 0: Fn row — Esc F1-F12 Del -->
+    <div class="row">
+      <button class="key w-esc" data-key="Escape"><span class="key-label">Esc</span></button>
+      <button class="key" data-key="F1"><span class="key-fn">F1</span></button>
+      <button class="key" data-key="F2"><span class="key-fn">F2</span></button>
+      <button class="key" data-key="F3"><span class="key-fn">F3</span></button>
+      <button class="key" data-key="F4"><span class="key-fn">F4</span></button>
+      <button class="key" data-key="F5"><span class="key-fn">F5</span></button>
+      <button class="key" data-key="F6"><span class="key-fn">F6</span></button>
+      <button class="key" data-key="F7"><span class="key-fn">F7</span></button>
+      <button class="key" data-key="F8"><span class="key-fn">F8</span></button>
+      <button class="key" data-key="F9"><span class="key-fn">F9</span></button>
+      <button class="key" data-key="F10"><span class="key-fn">F10</span></button>
+      <button class="key" data-key="F11"><span class="key-fn">F11</span></button>
+      <button class="key" data-key="F12"><span class="key-fn">F12</span></button>
+      <button class="key w-del" data-key="Delete"><span class="key-label">Del</span></button>
+    </div>
+
+    <!-- ROW 1: Number row -->
+    <div class="row">
+      <button class="key" data-key="`"><span class="top-char">~</span><span class="main-char">`</span></button>
+      <button class="key" data-key="1"><span class="top-char">!</span><span class="main-char">1</span></button>
+      <button class="key" data-key="2"><span class="top-char">@</span><span class="main-char">2</span></button>
+      <button class="key" data-key="3"><span class="top-char">#</span><span class="main-char">3</span></button>
+      <button class="key" data-key="4"><span class="top-char">$</span><span class="main-char">4</span></button>
+      <button class="key" data-key="5"><span class="top-char">%</span><span class="main-char">5</span></button>
+      <button class="key" data-key="6"><span class="top-char">^</span><span class="main-char">6</span></button>
+      <button class="key" data-key="7"><span class="top-char">&amp;</span><span class="main-char">7</span></button>
+      <button class="key" data-key="8"><span class="top-char">*</span><span class="main-char">8</span></button>
+      <button class="key" data-key="9"><span class="top-char">(</span><span class="main-char">9</span></button>
+      <button class="key" data-key="0"><span class="top-char">)</span><span class="main-char">0</span></button>
+      <button class="key" data-key="-"><span class="top-char">_</span><span class="main-char">-</span></button>
+      <button class="key" data-key="="><span class="top-char">+</span><span class="main-char">=</span></button>
+      <button class="key w-backspace" data-key="Backspace"><span class="key-label">Backspace</span></button>
+    </div>
+
+    <!-- ROW 2: QWERTY -->
+    <div class="row">
+      <button class="key w-tab" data-key="Tab"><span class="key-label">Tab</span></button>
+      <button class="key" data-key="q"><span class="main-char">Q</span></button>
+      <button class="key" data-key="w"><span class="main-char">W</span></button>
+      <button class="key" data-key="e"><span class="main-char">E</span></button>
+      <button class="key" data-key="r"><span class="main-char">R</span></button>
+      <button class="key" data-key="t"><span class="main-char">T</span></button>
+      <button class="key" data-key="y"><span class="main-char">Y</span></button>
+      <button class="key" data-key="u"><span class="main-char">U</span></button>
+      <button class="key" data-key="i"><span class="main-char">I</span></button>
+      <button class="key" data-key="o"><span class="main-char">O</span></button>
+      <button class="key" data-key="p"><span class="main-char">P</span></button>
+      <button class="key" data-key="["><span class="top-char">{</span><span class="main-char">[</span></button>
+      <button class="key" data-key="]"><span class="top-char">}</span><span class="main-char">]</span></button>
+      <button class="key w-backslash" data-key="\"><span class="top-char">|</span><span class="main-char">\</span></button>
+    </div>
+
+    <!-- ROW 3: ASDF -->
+    <div class="row">
+      <button class="key w-capslock" data-key="CapsLock"><span class="key-label">Caps</span></button>
+      <button class="key" data-key="a"><span class="main-char">A</span></button>
+      <button class="key" data-key="s"><span class="main-char">S</span></button>
+      <button class="key" data-key="d"><span class="main-char">D</span></button>
+      <button class="key" data-key="f"><span class="main-char">F</span></button>
+      <button class="key" data-key="g"><span class="main-char">G</span></button>
+      <button class="key" data-key="h"><span class="main-char">H</span></button>
+      <button class="key" data-key="j"><span class="main-char">J</span></button>
+      <button class="key" data-key="k"><span class="main-char">K</span></button>
+      <button class="key" data-key="l"><span class="main-char">L</span></button>
+      <button class="key" data-key=";"><span class="top-char">:</span><span class="main-char">;</span></button>
+      <button class="key" data-key="'"><span class="top-char">"</span><span class="main-char">'</span></button>
+      <button class="key w-enter" data-key="Enter"><span class="key-label">Enter</span></button>
+    </div>
+
+    <!-- ROW 4: ZXCV + arrows on right -->
+    <div class="row">
+      <button class="key w-shift-l" data-key="ShiftLeft"><span class="key-label">Shift</span></button>
+      <button class="key" data-key="z"><span class="main-char">Z</span></button>
+      <button class="key" data-key="x"><span class="main-char">X</span></button>
+      <button class="key" data-key="c"><span class="main-char">C</span></button>
+      <button class="key" data-key="v"><span class="main-char">V</span></button>
+      <button class="key" data-key="b"><span class="main-char">B</span></button>
+      <button class="key" data-key="n"><span class="main-char">N</span></button>
+      <button class="key" data-key="m"><span class="main-char">M</span></button>
+      <button class="key" data-key=","><span class="top-char">&lt;</span><span class="main-char">,</span></button>
+      <button class="key" data-key="."><span class="top-char">&gt;</span><span class="main-char">.</span></button>
+      <button class="key" data-key="/"><span class="top-char">?</span><span class="main-char">/</span></button>
+      <button class="key w-shift-r" data-key="ShiftRight"><span class="key-label">Shift</span></button>
+      <button class="key w-arrow-sm" data-key="ArrowUp"><span class="key-label" style="margin:auto;">↑</span></button>
+    </div>
+
+    <!-- ROW 5: Bottom + arrows -->
+    <div class="row">
+      <button class="key w-ctrl" data-key="ControlLeft"><span class="key-label">Ctrl</span></button>
+      <button class="key w-win" data-key="Meta"><span class="key-label">Win</span></button>
+      <button class="key w-alt" data-key="AltLeft"><span class="key-label">Alt</span></button>
+      <button class="key w-space" data-key=" "></button>
+      <button class="key w-alt-r" data-key="AltRight"><span class="key-label">Alt</span></button>
+      <button class="key w-fn" data-key="Fn"><span class="key-label">Fn</span></button>
+      <button class="key w-ctrl" data-key="ControlRight"><span class="key-label">Ctrl</span></button>
+      <button class="key w-arrow-b" data-key="ArrowLeft"><span class="key-label" style="margin:auto;">←</span></button>
+      <button class="key w-arrow-b" data-key="ArrowDown"><span class="key-label" style="margin:auto;">↓</span></button>
+      <button class="key w-arrow-b" data-key="ArrowRight"><span class="key-label" style="margin:auto;">→</span></button>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM PANEL -->
+  <div class="bottom-panel">
+    <div class="screw" style="position:relative;top:auto;left:auto;flex-shrink:0;"></div>
+    <button class="btn-record"></button>
+    <div class="led-stripe"></div>
+    <button class="btn-dark"></button>
+    <div class="brand">KB · 75 · WM</div>
+    <div class="ctrl-buttons">
+      <div class="ctrl-btn"></div>
+      <div class="ctrl-btn"></div>
+      <div class="ctrl-btn"></div>
+    </div>
+    <div class="screw" style="position:relative;top:auto;right:auto;flex-shrink:0;"></div>
+  </div>
+
+</div>
+</div>
+
+<script>
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  function playClick() {
+    const now = audioCtx.currentTime;
+    // Thud — deep low
+    const tb = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.08, audioCtx.sampleRate);
+    const td = tb.getChannelData(0);
+    for (let i=0;i<td.length;i++){const t=i/audioCtx.sampleRate;td[i]=(Math.random()*2-1)*Math.exp(-t*55);}
+    const ts = audioCtx.createBufferSource(); ts.buffer = tb;
+    const tlp = audioCtx.createBiquadFilter(); tlp.type='lowpass'; tlp.frequency.value=300;
+    const tg = audioCtx.createGain(); tg.gain.setValueAtTime(0.55,now); tg.gain.exponentialRampToValueAtTime(0.001,now+0.07);
+    ts.connect(tlp).connect(tg).connect(audioCtx.destination); ts.start(now); ts.stop(now+0.08);
+    // Body
+    const bb = audioCtx.createBuffer(1, audioCtx.sampleRate*0.06, audioCtx.sampleRate);
+    const bd = bb.getChannelData(0);
+    for(let i=0;i<bd.length;i++){const t=i/audioCtx.sampleRate;bd[i]=(Math.random()*2-1)*Math.exp(-t*90);}
+    const bs = audioCtx.createBufferSource(); bs.buffer=bb;
+    const bbp = audioCtx.createBiquadFilter(); bbp.type='bandpass'; bbp.frequency.value=700; bbp.Q.value=0.8;
+    const bg = audioCtx.createGain(); bg.gain.setValueAtTime(0.25,now); bg.gain.exponentialRampToValueAtTime(0.001,now+0.055);
+    bs.connect(bbp).connect(bg).connect(audioCtx.destination); bs.start(now); bs.stop(now+0.06);
+  }
+
+  function playRelease() {
+    const now = audioCtx.currentTime;
+    const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*0.04, audioCtx.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<d.length;i++){const t=i/audioCtx.sampleRate;d[i]=(Math.random()*2-1)*Math.exp(-t*120);}
+    const src = audioCtx.createBufferSource(); src.buffer=buf;
+    const lp = audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=400;
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(0.12,now); g.gain.exponentialRampToValueAtTime(0.001,now+0.035);
+    src.connect(lp).connect(g).connect(audioCtx.destination); src.start(now); src.stop(now+0.04);
+  }
+
+  const keyMap = {
+    'Escape':'Escape',
+    'F1':'F1','F2':'F2','F3':'F3','F4':'F4','F5':'F5','F6':'F6',
+    'F7':'F7','F8':'F8','F9':'F9','F10':'F10','F11':'F11','F12':'F12',
+    'Delete':'Delete',
+    'Backquote':'`','Digit1':'1','Digit2':'2','Digit3':'3','Digit4':'4','Digit5':'5',
+    'Digit6':'6','Digit7':'7','Digit8':'8','Digit9':'9','Digit0':'0','Minus':'-','Equal':'=',
+    'Backspace':'Backspace','Tab':'Tab',
+    'KeyQ':'q','KeyW':'w','KeyE':'e','KeyR':'r','KeyT':'t','KeyY':'y','KeyU':'u',
+    'KeyI':'i','KeyO':'o','KeyP':'p','BracketLeft':'[','BracketRight':']','Backslash':'\\',
+    'CapsLock':'CapsLock','KeyA':'a','KeyS':'s','KeyD':'d','KeyF':'f','KeyG':'g',
+    'KeyH':'h','KeyJ':'j','KeyK':'k','KeyL':'l','Semicolon':';','Quote':"'",'Enter':'Enter',
+    'ShiftLeft':'ShiftLeft','KeyZ':'z','KeyX':'x','KeyC':'c','KeyV':'v','KeyB':'b',
+    'KeyN':'n','KeyM':'m','Comma':',','Period':'.','Slash':'/','ShiftRight':'ShiftRight',
+    'ArrowUp':'ArrowUp',
+    'ControlLeft':'ControlLeft','MetaLeft':'Meta','AltLeft':'AltLeft','Space':' ',
+    'AltRight':'AltRight','ControlRight':'ControlRight',
+    'ArrowLeft':'ArrowLeft','ArrowDown':'ArrowDown','ArrowRight':'ArrowRight'
+  };
+
+  const pressed = new Set();
+  let capsOn = false;
+  let redTimeout = null;
+  const redLed = document.querySelector('.btn-record');
+  const greyLed = document.querySelector('.btn-dark');
+
+  function flashRed() {
+    redLed.classList.add('active');
+    clearTimeout(redTimeout);
+    redTimeout = setTimeout(() => redLed.classList.remove('active'), 120);
+  }
+
+  function pressKey(dk) {
+    if (pressed.has(dk)) return;
+    pressed.add(dk);
+    const btn = document.querySelector(`[data-key="${CSS.escape(dk)}"]`);
+    if (btn) btn.classList.add('pressed');
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    playClick();
+    flashRed();
+  }
+
+  function releaseKey(dk) {
+    if (!pressed.has(dk)) return;
+    pressed.delete(dk);
+    const btn = document.querySelector(`[data-key="${CSS.escape(dk)}"]`);
+    if (btn) btn.classList.remove('pressed');
+    playRelease();
+  }
+
+  document.addEventListener('keydown', e => {
+    e.preventDefault();
+    const dk = keyMap[e.code];
+    if (dk) pressKey(dk);
+    if (e.code === 'CapsLock') {
+      capsOn = !capsOn;
+      greyLed.classList.toggle('active', capsOn);
+    }
+  });
+  document.addEventListener('keyup', e => { const dk = keyMap[e.code]; if (dk) releaseKey(dk); });
+
+  document.querySelectorAll('.key').forEach(btn => {
+    const dk = btn.dataset.key;
+    btn.addEventListener('mousedown', () => { pressKey(dk); flashRed(); });
+    btn.addEventListener('mouseup', () => releaseKey(dk));
+    btn.addEventListener('mouseleave', () => { if (pressed.has(dk)) releaseKey(dk); });
+    btn.addEventListener('touchstart', e => { e.preventDefault(); pressKey(dk); flashRed(); });
+    btn.addEventListener('touchend', () => releaseKey(dk));
+  });
+</script>
+</body>
+</html>
